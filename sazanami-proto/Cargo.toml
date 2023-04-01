@@ -1,0 +1,16 @@
+[package]
+name = "sazanami-proto"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+bytes = "1.4.0"
+serde = "1.0.159"
+smoltcp = "0.9.1"
+tokio = { version = "1.27.0", optional = true, features = ["io-util"] }
+
+[features]
+tokio = ["dep:tokio"]

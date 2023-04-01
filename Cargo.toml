@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "sazanami",
+    "sazanami-api",
+    "sazanami-common",
+    "sazanami-dns",
+    "sazanami-sys",
+    "sazanami-tun",
+    "sazanami-proto",
+    "sazanami-ip-pool",
+    "xtask"
+]

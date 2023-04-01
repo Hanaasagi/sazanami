@@ -1,0 +1,30 @@
+port: 1080
+tun:
+  name: "sazanami-tun"
+  ip: 10.0.0.1
+  cidr: 10.0.0.0/16
+dns:
+  upstream:
+    - 8.8.8.8:53
+    - 1.1.1.1:53
+  timeout: 2s
+  listen_at: "127.0.0.1:53"
+connect_timeout: 2s
+connect_retries: 2
+read_timeout: 10s
+write_timeout: 2000ms
+proxies:
+  - name: "Tokyo Sakura IPLC 01"
+    type: ss
+    server: 127.0.0.1
+    port: 11451
+    method: aes-128-gcm
+    password: All-hail-chatgpt
+    udp: true
+# From https://github.com/Loyalsoldier/clash-rules
+rules:
+  - DOMAIN,clash.razord.top,DIRECT
+  - DOMAIN,yacd.haishan.me,DIRECT
+  - DOMAIN-SUFFIX,archlinux.org,DIRECT
+  - DOMAIN-SUFFIX,office365.com,DIRECT
+  - MATCH,PROXY
