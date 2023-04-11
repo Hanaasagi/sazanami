@@ -74,4 +74,9 @@ rules:
 RUST_LOG=none,sazanami=info cargo xtask run -- --config example.yaml
 ```
 
-<!-- ![out-5](https://user-images.githubusercontent.com/9482395/231234649-af857d62-5f99-4f01-8c25-cc0af3f4b9ac.png) !-->
+<!-- ![out-5](https://user-images.githubusercontent.com/9482395/231234649-af857d62-5f99-4f01-8c25-cc0af3f4b9ac.png) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami?ref=badge_shield)
+!-->
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami?ref=badge_large)
