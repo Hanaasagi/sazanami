@@ -2,6 +2,11 @@
 name = "sazanami-dns"
 version = "0.1.0"
 edition = "2021"
+authors = ["Hanaasagi <ambiguous404@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = """
+DNS server and client based on trust-dns.
+"""
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,7 +15,7 @@ anyhow = "1.0.70"
 async-std-resolver = "0.22.0"
 async-trait = "0.1.68"
 byteorder = "1.4.3"
-tokio = { version = "1.27.0", features = ["macros", "signal"] }
+tokio = { version = "1.27.0"}
 tracing = "0.1.37"
 trust-dns = "0.22.0"
 trust-dns-proto = "0.22.0"
@@ -19,11 +24,4 @@ trust-dns-server = "0.22.0"
 
 [dev-dependencies]
 tempfile = "3.5.0"
-
-# [lib]
-# name = "sazanami_dns"
-# path = "src/lib.rs"
-
-# [[bin]]
-# name = "sazanami-dns"
-# path = "src/main.rs"
+tokio = { version = "1.27.0", features = ["macros", "signal"] }
