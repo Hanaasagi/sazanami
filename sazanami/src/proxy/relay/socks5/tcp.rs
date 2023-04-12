@@ -4,13 +4,28 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use sazanami_proto::socks5::{
-    Address, Command, HandshakeRequest, HandshakeResponse, Reply, TcpRequestHeader,
-    TcpResponseHeader, SOCKS5_AUTH_METHOD_NONE,
+    Address, AuthenticationRequest, AuthenticationResponse, Command, HandshakeRequest,
+    HandshakeResponse, Reply, TcpRequestHeader, TcpResponseHeader, SOCKS5_AUTH_METHOD_NONE,
+    SOCKS5_AUTH_METHOD_PASSWORD,
 };
 use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
 use tokio::io::ReadBuf;
 use tokio::net::TcpStream;
+
+// Socks5 handshake request packet
+// +----+----------+----------+
+// |VER | NMETHODS | METHODS  |
+// +----+----------+----------+
+// | 1  |    1     | 1 to 255 |
+// +----+----------+----------+
+
+// Socks5 handshake response packet
+// +----+--------+
+// |VER | METHOD |
+// +----+--------+
+// | 1  |   1    |
+// +----+--------+
 
 #[derive(Debug)]
 pub struct Socks5TcpStream {
@@ -18,19 +33,50 @@ pub struct Socks5TcpStream {
 }
 
 impl Socks5TcpStream {
-    pub async fn connect(mut stream: TcpStream, addr: Address) -> Result<Self> {
-        Self::handshake(&mut stream).await?;
+    pub async fn connect(
+        mut stream: TcpStream,
+        addr: Address,
+        auth: Option<(String, String)>,
+    ) -> Result<Self> {
+        if let Some(auth) = auth {
+            // auth.0 username
+            // auth.1 password
+            Self::handshake_with_auth(&mut stream, auth.0, auth.1).await?;
+        } else {
+            Self::handshake(&mut stream).await?;
+        }
         Self::prepare_request(&mut stream, addr).await?;
 
         Ok(Socks5TcpStream { stream })
     }
 
-    // TODO: auth
     async fn handshake(mut stream: &mut TcpStream) -> Result<()> {
         let handshake_req = HandshakeRequest::new(vec![SOCKS5_AUTH_METHOD_NONE]);
         handshake_req.write_to(&mut stream).await?;
         let handshake_resp = HandshakeResponse::read_from(&mut stream).await?;
         if handshake_resp.chosen_method != SOCKS5_AUTH_METHOD_NONE {
+            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        }
+        Ok(())
+    }
+
+    async fn handshake_with_auth(
+        mut stream: &mut TcpStream,
+        username: String,
+        password: String,
+    ) -> Result<()> {
+        let handshake_req = HandshakeRequest::new(vec![SOCKS5_AUTH_METHOD_PASSWORD]);
+        handshake_req.write_to(&mut stream).await?;
+        let handshake_resp = HandshakeResponse::read_from(&mut stream).await?;
+        if handshake_resp.chosen_method != SOCKS5_AUTH_METHOD_PASSWORD {
+            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        }
+
+        // username and password
+        let auth_req = AuthenticationRequest::new(username, password);
+        auth_req.write_to(&mut stream).await?;
+        let auth_resp = AuthenticationResponse::read_from(&mut stream).await?;
+        if auth_resp.status != 0 {
             return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
         }
 
@@ -93,6 +139,7 @@ mod tests {
         let mut stream = Socks5TcpStream::connect(
             TcpStream::connect("127.0.0.1:10080").await?,
             Address::DomainNameAddress("example.com".to_string(), 80),
+            None,
         )
         .await?;
 
