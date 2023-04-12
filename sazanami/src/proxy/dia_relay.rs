@@ -89,9 +89,15 @@ impl Dialer {
         // wrap the connection to a stream
         let stream_inner = match server.protocol() {
             ServerProtocol::Socks5 => {
-                //
+                let mut auth = None;
+                if server.username().is_some() && server.password().is_some() {
+                    auth = Some((
+                        server.username().unwrap().to_string(),
+                        server.password().unwrap().to_string(),
+                    ))
+                }
                 ProxyTcpStreamInner::Socks5(
-                    Socks5TcpStream::connect(stream, remote_addr.clone()).await?,
+                    Socks5TcpStream::connect(stream, remote_addr.clone(), auth).await?,
                 )
             }
             ServerProtocol::ShadowSocks => {

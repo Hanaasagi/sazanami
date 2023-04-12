@@ -758,6 +758,149 @@ impl HandshakeResponse {
     }
 }
 
+/// SOCKS5 authentication request packet
+///
+/// ```plain
+/// +----+------+----------+------+----------+
+/// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+/// +----+------+----------+------+----------+
+/// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+/// +----+------+----------+------+----------+
+/// ```
+/// ver is 0x01, not the socks5 version
+#[derive(Clone, Debug)]
+pub struct AuthenticationRequest {
+    pub username: String,
+    pub password: String,
+}
+
+impl AuthenticationRequest {
+    /// Creates a handshake request
+    pub fn new(username: String, password: String) -> AuthenticationRequest {
+        AuthenticationRequest { username, password }
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Read from a reader
+    pub async fn read_from<R>(r: &mut R) -> io::Result<AuthenticationRequest>
+    where
+        R: AsyncRead + Unpin,
+    {
+        let mut buf = [0u8; 2];
+        r.read_exact(&mut buf).await?;
+
+        let ver = buf[0];
+        let ulen = buf[1];
+
+        if ver != consts::SOCKS5_VERSION {
+            use std::io::{Error, ErrorKind};
+            let err = Error::new(
+                ErrorKind::InvalidData,
+                format!("unsupported socks version {ver:#x}"),
+            );
+            return Err(err);
+        }
+
+        let mut username = vec![0u8; ulen as usize];
+        r.read_exact(&mut username).await?;
+
+        let mut plen = [0u8; 1];
+        r.read_exact(&mut plen).await?;
+
+        let mut password = vec![0u8; ulen as usize];
+        r.read_exact(&mut password).await?;
+
+        Ok(AuthenticationRequest {
+            username: String::from_utf8_lossy(&username).to_string(),
+            password: String::from_utf8_lossy(&password).to_string(),
+        })
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Write to a writer
+    pub async fn write_to<W>(&self, w: &mut W) -> io::Result<()>
+    where
+        W: AsyncWrite + Unpin,
+    {
+        let mut buf = BytesMut::with_capacity(self.serialized_len());
+        self.write_to_buf(&mut buf);
+        w.write_all(&buf).await
+    }
+
+    /// Write to buffer
+    pub fn write_to_buf<B: BufMut>(&self, buf: &mut B) {
+        let AuthenticationRequest {
+            ref username,
+            ref password,
+        } = *self;
+        buf.put_slice(&[0x01, username.len() as u8]);
+        buf.put_slice(username.as_bytes());
+        buf.put_slice(&[password.len() as u8]);
+        buf.put_slice(password.as_bytes());
+    }
+
+    /// Get length of bytes
+    pub fn serialized_len(&self) -> usize {
+        3 + self.username.len() + self.password.len()
+    }
+}
+
+/// SOCKS5 authentication response packet
+///
+/// ```plain
+/// +----+--------+
+/// |VER | STATUS |
+/// +----+--------+
+/// | 1  |   1    |
+/// +----+--------+
+/// ```
+#[derive(Clone, Debug, Copy)]
+pub struct AuthenticationResponse {
+    pub status: u8,
+}
+
+impl AuthenticationResponse {
+    /// Creates a handshake response
+    pub fn new(status: u8) -> AuthenticationResponse {
+        AuthenticationResponse { status }
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Read from a reader
+    pub async fn read_from<R>(r: &mut R) -> io::Result<AuthenticationResponse>
+    where
+        R: AsyncRead + Unpin,
+    {
+        let mut buf = [0u8; 2];
+        r.read_exact(&mut buf).await?;
+
+        let ver = buf[0];
+        let status = buf[1];
+        Ok(AuthenticationResponse { status })
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Write to a writer
+    pub async fn write_to<W>(self, w: &mut W) -> io::Result<()>
+    where
+        W: AsyncWrite + Unpin,
+    {
+        let mut buf = BytesMut::with_capacity(self.serialized_len());
+        self.write_to_buf(&mut buf);
+        w.write_all(&buf).await
+    }
+
+    /// Write to buffer
+    pub fn write_to_buf<B: BufMut>(self, buf: &mut B) {
+        buf.put_slice(&[consts::SOCKS5_VERSION, self.status]);
+    }
+
+    /// Length in bytes
+    pub fn serialized_len(self) -> usize {
+        2
+    }
+}
+
 /// UDP ASSOCIATE request header
 ///
 /// ```plain
