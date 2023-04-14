@@ -21,10 +21,25 @@ proxies:
     method: aes-128-gcm
     password: All-hail-chatgpt
     udp: true
+  - name: "HK vultr IPLC 01"
+    type: socks5
+    server: 127.0.0.1
+    port: 11451
+    username: oshinoko
+    password: hoshinoai
+groups:
+  - name: "JP"
+    type: load_balance
+    proxies:
+      - "Tokyo Sakura IPLC 01"
+  - name: "HK"
+    type: select
+    proxies:
+      - "HK vultr IPLC 01"
 # From https://github.com/Loyalsoldier/clash-rules
 rules:
   - DOMAIN,clash.razord.top,DIRECT
   - DOMAIN,yacd.haishan.me,DIRECT
   - DOMAIN-SUFFIX,archlinux.org,DIRECT
-  - DOMAIN-SUFFIX,office365.com,DIRECT
+  - DOMAIN-SUFFIX,office365.com,HK
   - MATCH,PROXY
