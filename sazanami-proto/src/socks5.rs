@@ -964,6 +964,6 @@ impl UdpAssociateHeader {
     /// Length in bytes
     #[inline]
     pub fn serialized_len(&self) -> usize {
-        3 + self.address.serialized_len()
+        2 + 1 + self.address.serialized_len()
     }
 }
