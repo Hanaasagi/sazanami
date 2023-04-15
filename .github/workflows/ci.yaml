@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Tests on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Rust
+        run: |
+          rustup install stable
+          rustup toolchain install nightly --component rust-src
+          cargo install bpf-linker
+          rustup default nightly
+      - name: Setup Env
+        run: docker-compose up -d
+      - name: Build
+        run: cargo xtask build-ebpf
+      - name: Run tests
+        run: cargo test --verbose
