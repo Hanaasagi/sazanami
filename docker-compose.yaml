@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  socks5-unauth-server:
+    image: netbyte/socks5-server
+    container_name: socks5-unauth-server
+    ports:
+      - "10080:10080"
+      - "10080:10080/udp"
+    command:
+      - -l
+      - :10080
+  socks5-auth-server:
+    image: netbyte/socks5-server
+    container_name: socks5-auth-server
+    ports:
+      - "10081:10080"
+      - "10081:10080/udp"
+    command:
+      - -l
+      - :10080
+      - -u
+      - oshinoko
+      - -p
+      - hoshinoai
