@@ -74,6 +74,7 @@ rules:
 RUST_LOG=none,sazanami=info cargo xtask run -- --config example.yaml
 ```
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e6c51cc2aba64c38be33a3ac1a274e81)](https://app.codacy.com/gh/Hanaasagi/sazanami?utm_source=github.com&utm_medium=referral&utm_content=Hanaasagi/sazanami&utm_campaign=Badge_Grade)
 <!-- ![out-5](https://user-images.githubusercontent.com/9482395/231234649-af857d62-5f99-4f01-8c25-cc0af3f4b9ac.png) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami?ref=badge_shield)
 !-->
 
