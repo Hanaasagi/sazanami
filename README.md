@@ -1,5 +1,9 @@
 <h1 align="center"> Sazanami 🌊 Network </h1>
 
+[![CI](https://github.com/Hanaasagi/sazanami/actions/workflows/ci.yaml/badge.svg)](https://github.com/Hanaasagi/sazanami/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/Hanaasagi/sazanami/branch/master/graph/badge.svg?token=5HYU2QTKZW)](https://codecov.io/gh/Hanaasagi/sazanami)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/fe79332f3c95478c9ff8190a0893d262)](https://app.codacy.com/gh/Hanaasagi/sazanami/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 Universal Proxy Client.
 
 ## Working mode
