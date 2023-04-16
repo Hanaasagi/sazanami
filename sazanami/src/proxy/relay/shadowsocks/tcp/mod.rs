@@ -233,3 +233,92 @@ impl AsyncWrite for SSTcpStream {
         self.priv_poll_close(cx)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Error, ErrorKind, Result};
+
+    use shadowsocks_crypto::CipherKind;
+    use tokio::io::AsyncReadExt;
+    use tokio::io::AsyncWriteExt;
+    use tokio::net::TcpStream;
+
+    use super::Address;
+    use super::SSTcpStream;
+    use crate::proxy::shadowsocks::bytes_to_key;
+
+    #[tokio::test]
+    async fn test_ss_stream() -> Result<()> {
+        let addr = Address::DomainNameAddress("example.com".to_string(), 80);
+
+        let stream = TcpStream::connect("127.0.0.1:10090").await?;
+        let method = CipherKind::SS_RC4_MD5;
+        let key = bytes_to_key("ruby".as_ref(), method.key_len(), method.iv_len());
+
+        let mut ss_stream = SSTcpStream::connect(stream, addr, method, key).await?;
+        ss_stream.write_all(
+                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                .as_bytes(),
+            )
+            .await?;
+        let mut buf = [0; 1024];
+
+        ss_stream.read(&mut buf[..]).await?;
+
+        let resp = String::from_utf8_lossy(&buf);
+
+        assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ahead_stream() -> Result<()> {
+        let addr = Address::DomainNameAddress("example.com".to_string(), 80);
+
+        let stream = TcpStream::connect("127.0.0.1:10091").await?;
+        let method = CipherKind::AES_128_GCM;
+        let key = bytes_to_key("aquamarine".as_ref(), method.salt_len(), method.salt_len());
+
+        let mut ss_stream = SSTcpStream::connect(stream, addr, method, key).await?;
+        ss_stream.write_all(
+                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                .as_bytes(),
+            )
+            .await?;
+        let mut buf = [0; 1024];
+
+        ss_stream.read(&mut buf[..]).await?;
+
+        let resp = String::from_utf8_lossy(&buf);
+
+        assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_plain_stream() -> Result<()> {
+        let addr = Address::DomainNameAddress("example.com".to_string(), 80);
+
+        let stream = TcpStream::connect("127.0.0.1:10092").await?;
+        let method = CipherKind::NONE;
+        let key = bytes_to_key("".as_ref(), method.iv_len(), method.iv_len());
+
+        let mut ss_stream = SSTcpStream::connect(stream, addr, method, key).await?;
+        ss_stream.write_all(
+                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                .as_bytes(),
+            )
+            .await?;
+        let mut buf = [0; 1024];
+
+        ss_stream.read(&mut buf[..]).await?;
+
+        let resp = String::from_utf8_lossy(&buf);
+
+        assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
+
+        Ok(())
+    }
+}

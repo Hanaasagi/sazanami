@@ -22,3 +22,27 @@ services:
       - oshinoko
       - -p
       - hoshinoai
+  ss-stream-server:
+    image: ghcr.io/shadowsocks/ssserver-rust
+    container_name: ss-stream-server
+    ports:
+      - "10090:9000"
+      - "10090:9000/udp"
+    volumes:
+      - "./misc/ss-stream.json:/etc/shadowsocks-rust/config.json"
+  ss-ahead-server:
+    image: ghcr.io/shadowsocks/ssserver-rust
+    container_name: ss-ahead-server
+    ports:
+      - "10091:9000"
+      - "10091:9000/udp"
+    volumes:
+      - "./misc/ss-ahead.json:/etc/shadowsocks-rust/config.json"
+  ss-plain-server:
+    image: ghcr.io/shadowsocks/ssserver-rust
+    container_name: ss-plain-server
+    ports:
+      - "10092:9000"
+      - "10092:9000/udp"
+    volumes:
+      - "./misc/ss-plain.json:/etc/shadowsocks-rust/config.json"

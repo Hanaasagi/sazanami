@@ -94,7 +94,7 @@ impl<T: AsyncRead + Unpin> DecryptedReader<T> {
                 // let mut packet = data.to_owned();
                 self.cipher.as_mut().unwrap().decrypt_packet(&mut data);
 
-                self.buffer.put_slice(data)
+                self.buffer.put_slice(data);
             }
         }
 
