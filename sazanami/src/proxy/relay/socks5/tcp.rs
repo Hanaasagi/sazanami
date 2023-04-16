@@ -158,4 +158,29 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_socks5_tcp_auth() -> Result<()> {
+        let mut stream = Socks5TcpStream::connect(
+            TcpStream::connect("127.0.0.1:10081").await?,
+            Address::DomainNameAddress("example.com".to_string(), 80),
+            Some(("oshinoko".to_string(), "hoshinoai".to_string())),
+        )
+        .await?;
+
+        // simulate a http request
+        stream
+            .write_all(
+                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                .as_bytes(),
+            )
+            .await?;
+
+        let mut resp = BytesMut::with_capacity(2048);
+        stream.read_buf(&mut resp).await?;
+        let resp_text = String::from_utf8_lossy(&resp).to_string();
+        assert!(resp_text.contains("HTTP/1.1 200 OK"));
+
+        Ok(())
+    }
 }
