@@ -6,8 +6,9 @@ use std::time::Duration;
 use bytes::BufMut;
 use bytes::BytesMut;
 use sazanami_proto::socks5::{
-    Address, Command, HandshakeRequest, HandshakeResponse, Reply, TcpRequestHeader,
-    TcpResponseHeader, UdpAssociateHeader, SOCKS5_AUTH_METHOD_NONE,
+    Address, AuthenticationRequest, AuthenticationResponse, Command, HandshakeRequest,
+    HandshakeResponse, Reply, TcpRequestHeader, TcpResponseHeader, UdpAssociateHeader,
+    SOCKS5_AUTH_METHOD_NONE, SOCKS5_AUTH_METHOD_PASSWORD,
 };
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
@@ -22,22 +23,26 @@ pub struct Socks5UdpSocket {
 }
 
 impl Socks5UdpSocket {
-    pub async fn connect(socks5_server: SocketAddr) -> Result<Self> {
+    pub async fn connect(
+        socks5_server: SocketAddr,
+        auth: Option<(String, String)>,
+    ) -> Result<Self> {
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
-        let mut conn = timeout(Duration::from_secs(1), TcpStream::connect(socks5_server)).await??;
-        let handshake_req = HandshakeRequest::new(vec![SOCKS5_AUTH_METHOD_NONE]);
-        handshake_req.write_to(&mut conn).await?;
-        let handshake_resp = HandshakeResponse::read_from(&mut conn).await?;
-        if handshake_resp.chosen_method != SOCKS5_AUTH_METHOD_NONE {
-            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        let mut stream =
+            timeout(Duration::from_secs(1), TcpStream::connect(socks5_server)).await??;
+        if let Some(auth) = auth {
+            Self::handshake_with_auth(&mut stream, auth.0, auth.1).await?;
+        } else {
+            Self::handshake(&mut stream).await?;
         }
+
         let req_header = TcpRequestHeader::new(
             Command::UdpAssociate,
             Address::SocketAddress(socket.local_addr()?),
             // Address::SocketAddress("0.0.0.0:0".parse().expect("never error")),
         );
-        req_header.write_to(&mut conn).await?;
-        let resp_header = TcpResponseHeader::read_from(&mut conn).await?;
+        req_header.write_to(&mut stream).await?;
+        let resp_header = TcpResponseHeader::read_from(&mut stream).await?;
         if resp_header.reply != Reply::Succeeded {
             return Err(Error::new(
                 ErrorKind::InvalidData,
@@ -57,8 +62,40 @@ impl Socks5UdpSocket {
         socket.connect(server_bind_addr).await?;
         Ok(Socks5UdpSocket {
             socket,
-            associate_conn: conn,
+            associate_conn: stream,
         })
+    }
+
+    async fn handshake(mut stream: &mut TcpStream) -> Result<()> {
+        let handshake_req = HandshakeRequest::new(vec![SOCKS5_AUTH_METHOD_NONE]);
+        handshake_req.write_to(&mut stream).await?;
+        let handshake_resp = HandshakeResponse::read_from(&mut stream).await?;
+        if handshake_resp.chosen_method != SOCKS5_AUTH_METHOD_NONE {
+            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        }
+        Ok(())
+    }
+
+    async fn handshake_with_auth(
+        mut stream: &mut TcpStream,
+        username: String,
+        password: String,
+    ) -> Result<()> {
+        let handshake_req = HandshakeRequest::new(vec![SOCKS5_AUTH_METHOD_PASSWORD]);
+        handshake_req.write_to(&mut stream).await?;
+        let handshake_resp = HandshakeResponse::read_from(&mut stream).await?;
+        if handshake_resp.chosen_method != SOCKS5_AUTH_METHOD_PASSWORD {
+            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        }
+        // username and password
+        let auth_req = AuthenticationRequest::new(username, password);
+        auth_req.write_to(&mut stream).await?;
+        let auth_resp = AuthenticationResponse::read_from(&mut stream).await?;
+        if auth_resp.status != 0 {
+            return Err(Error::new(ErrorKind::InvalidData, "response methods error"));
+        }
+
+        Ok(())
     }
 
     pub async fn send_to(&self, buf: &[u8], addr: SocketAddr) -> Result<usize> {
@@ -105,9 +142,32 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_socks5_udp() -> Result<()> {
-        let conn =
-            Socks5UdpSocket::connect(SocketAddr::from_str("127.0.0.1:10080").unwrap()).await?;
+    async fn test_socks5_udp_no_auth() -> Result<()> {
+        let conn = Socks5UdpSocket::connect(SocketAddr::from_str("127.0.0.1:10080").unwrap(), None)
+            .await?;
+        let remote_addr = SocketAddr::from_str("8.8.8.8:53").unwrap();
+        // this is a dns request payload for lookup example.com
+        let size = conn
+            .send_to(
+                    b"\xaa\xaa\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01",
+                remote_addr.clone(),
+            )
+            .await?;
+
+        let mut buf = vec![0; 1500];
+        let (size, addr) = conn.recv_from(&mut buf).await?;
+        // example.com address is 93.184.216.34
+        assert_eq!(buf[size - 4..size], [93, 184, 216, 34]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_socks5_udp_auth() -> Result<()> {
+        let conn = Socks5UdpSocket::connect(
+            SocketAddr::from_str("127.0.0.1:10081").unwrap(),
+            Some(("oshinoko".to_string(), "hoshinoai".to_string())),
+        )
+        .await?;
         let remote_addr = SocketAddr::from_str("8.8.8.8:53").unwrap();
         // this is a dns request payload for lookup example.com
         let size = conn
