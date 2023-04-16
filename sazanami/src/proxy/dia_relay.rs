@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
@@ -9,8 +10,11 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 use std::time::Instant;
 
+use md5::Md5;
 use sazanami_dns::DNSResolver;
 use sazanami_proto::socks5::Address;
+use sazanami_ringo::HashRing;
+use sazanami_ringo::Node;
 use shadowsocks_crypto::CipherCategory;
 use shadowsocks_crypto::CipherKind;
 use tokio::io::AsyncRead;
@@ -21,11 +25,13 @@ use tokio::sync::Mutex;
 use tokio::time::timeout;
 use tokio_retry::strategy::{jitter, ExponentialBackoff};
 use tokio_retry::Retry;
+use tracing::info;
 
 use super::raw::RawTcpStream;
 use super::shadowsocks::bytes_to_key;
 use super::shadowsocks::SSTcpStream;
 use super::socks5::Socks5TcpStream;
+use crate::config::Action;
 use crate::config::Config;
 use crate::config::ServerConfig;
 use crate::config::ServerProtocol;
@@ -39,7 +45,8 @@ enum ProxyTcpStreamInner {
 /// Dialer is used to connect to a remote server.
 #[derive(Clone)]
 pub struct Dialer {
-    relay_servers: Arc<Mutex<Vec<ServerConfig>>>,
+    relay_servers: Arc<HashMap<String, ServerConfig>>,
+    config: Arc<Mutex<Config>>,
     connect_retries: usize,
     connect_timeout: Duration,
     resolver: DNSResolver,
@@ -50,12 +57,18 @@ impl Dialer {
     pub async fn new(config: Arc<Config>) -> Self {
         let resolver = DNSResolver::new(config.dns.upstream.clone(), true).await;
 
-        let relay_servers = Arc::new(Mutex::new((*config.proxies).clone()));
+        let relay_servers = Arc::new(HashMap::from_iter(
+            config
+                .proxies
+                .iter()
+                .map(|proxy| (proxy.name().to_string(), proxy.clone())),
+        ));
         let connect_retries = config.connect_retries as usize;
         let connect_timeout = config.connect_timeout;
 
         Self {
             relay_servers,
+            config: Arc::new(Mutex::new((*config).clone())),
             connect_retries,
             connect_timeout,
             resolver,
@@ -63,16 +76,53 @@ impl Dialer {
     }
 
     /// Select a upstream server
-    async fn select_relay_server(&self) -> ServerConfig {
-        // TODO: select a server algorithm
-        let servers = self.relay_servers.lock().await;
-        servers[0].clone()
+    async fn select_relay_server(&self, remote_addr: &Address) -> ServerConfig {
+        let action = match remote_addr {
+            Address::SocketAddress(socket_addr) => self
+                .config
+                .lock()
+                .await
+                .rules
+                .action_for_domain(None, Some(socket_addr.ip())),
+            Address::DomainNameAddress(domain, port) => self
+                .config
+                .lock()
+                .await
+                .rules
+                .action_for_domain(Some(&domain), None),
+        };
+
+        // Direct and reject is checked in the DNS components.
+        let server = match &action {
+            Some(Action::Proxy) => self.relay_servers.values().nth(0).unwrap().clone(),
+            Some(Action::Custom(name)) => {
+                // config is validated in the startup
+                let config = self.config.lock().await;
+                let group = config.groups.get(&name).unwrap();
+
+                if let Some(server_name) = group.select_proxy(&remote_addr.to_string()) {
+                    self.relay_servers.get(&server_name).unwrap().clone()
+                } else {
+                    self.relay_servers.values().nth(0).unwrap().clone()
+                }
+            }
+            _ => self.relay_servers.values().nth(0).unwrap().clone(),
+        };
+
+        info!(
+            "dialer select a remote relay server for `{}`, match action rules {:?}, start to dial {:?}",
+            remote_addr,
+            action,
+            server.name()
+        );
+
+        server
     }
 
     /// Select a relay server and connect to it.
     pub async fn connect(&self, remote_addr: Address) -> Result<ProxyTcpStream> {
         // select a upstream server
-        let server = self.select_relay_server().await;
+        let server = self.select_relay_server(&remote_addr).await;
         // TODO: handle all ips
         let relay_ip = self.resolver.resolve_ip(server.domain()).await.unwrap()[0];
 

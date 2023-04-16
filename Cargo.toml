@@ -8,5 +8,6 @@ members = [
     "sazanami-tun",
     "sazanami-proto",
     "sazanami-ip-pool",
+    "sazanami-ringo",
     "xtask"
 ]

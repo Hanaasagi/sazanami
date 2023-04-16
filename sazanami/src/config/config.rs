@@ -135,7 +135,7 @@ impl Config {
     /// Load configuration from file path
     pub fn load<T: AsRef<Path>>(path: T) -> Result<Self> {
         let file = File::open(path)?;
-        let config: Config = serde_yaml::from_reader(file)?;
+        let mut config: Config = serde_yaml::from_reader(file)?;
         // validate, some fields are interdependent
         config.validate()?;
         Ok(config)
