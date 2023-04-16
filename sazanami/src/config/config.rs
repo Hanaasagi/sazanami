@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -11,9 +12,14 @@ use sazanami_proto::Ipv4CidrSerde;
 use serde;
 use serde::Deserialize;
 
-use super::rules::ProxyRules;
 use super::rules::Rule;
+use super::rules::{Action, ProxyGroups, ProxyRules};
 use super::ServerConfig;
+
+/// Default value for listening at
+fn default_listen_port() -> u16 {
+    9000
+}
 
 /// Default value for dns timeout
 fn default_dns_timeout() -> Duration {
@@ -95,7 +101,7 @@ impl Default for DNSConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     /// Proxy server lisiten at
-    #[serde(default)]
+    #[serde(default = "default_listen_port")]
     pub port: u16,
     /// Tunnel configuration
     #[serde(default)]
@@ -117,8 +123,11 @@ pub struct Config {
     pub write_timeout: Duration,
     /// Proxy Servers
     pub proxies: Arc<Vec<ServerConfig>>,
+    /// Proxy Groups
+    #[serde(with = "groups", default)]
+    pub groups: ProxyGroups,
     /// Proxy Rules
-    #[serde(with = "rules")]
+    #[serde(with = "rules", default)]
     pub rules: ProxyRules,
 }
 
@@ -126,8 +135,59 @@ impl Config {
     /// Load configuration from file path
     pub fn load<T: AsRef<Path>>(path: T) -> Result<Self> {
         let file = File::open(path)?;
-        let config: Config = serde_yaml::from_reader(file)?;
+        let mut config: Config = serde_yaml::from_reader(file)?;
+        // validate, some fields are interdependent
+        config.validate()?;
         Ok(config)
+    }
+
+    fn validate(&self) -> Result<()> {
+        self.validate_proxy_groups()?;
+        self.validate_proxy_rules()?;
+        Ok(())
+    }
+
+    // validate proxy_groups: values in proxy_groups.proxies field must appear in proxies field
+    fn validate_proxy_groups(&self) -> Result<()> {
+        let proxy_map: HashMap<&str, &ServerConfig> =
+            HashMap::from_iter(self.proxies.iter().map(|item| (item.name(), item)));
+        for group in self.groups.values() {
+            for proxy in group.proxies.iter() {
+                if proxy_map.get(proxy.as_str()).is_none() {
+                    return Err(anyhow::format_err!(
+                        "proxy '{}' is not existed, but it's referenced by group '{}'",
+                        proxy,
+                        group.name
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_proxy_rules(&self) -> Result<()> {
+        for rule in self.rules.values() {
+            let action = match rule {
+                Rule::Match(action) => action,
+                Rule::Domain(_, action) => action,
+                Rule::DomainSuffix(_, action) => action,
+                Rule::DomainKeyword(_, action) => action,
+                Rule::IpCidr(_, action) => action,
+            };
+
+            match action {
+                Action::Custom(group) => {
+                    if !self.groups.has(&group) {
+                        return Err(anyhow::format_err!(
+                            "proxy group '{}' is not existed, but it's referenced by rules",
+                            group,
+                        ));
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
     }
 }
 
@@ -184,6 +244,22 @@ mod rules {
     }
 }
 
+mod groups {
+    use std::str::FromStr;
+
+    use serde::{Deserialize, Deserializer};
+
+    use crate::config::rules::{Group, ProxyGroups};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<ProxyGroups, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let groups: Vec<Group> = Vec::deserialize(deserializer)?;
+        Ok(ProxyGroups::new(groups))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;
@@ -197,7 +273,66 @@ mod tests {
     use crate::config::ServerProtocol;
 
     #[test]
-    fn test_load_config() {
+    fn test_load_config_with_default_value() {
+        let mut tmp_file = NamedTempFile::new().expect("Failed to create tempfile");
+        let content = r#"
+        proxies:
+          - name: "Tokyo Sakura IPLC 01"
+            type: ss
+            server: tokyo01.sakurawind.com
+            port: 11451
+            method: chacha20-ietf
+            password: All-hail-chatgpt
+            udp: true
+        "#;
+
+        tmp_file.write_all(content.as_bytes()).unwrap();
+
+        let config = Config::load(tmp_file.path()).unwrap();
+
+        assert_eq!(config.port, 9000);
+        assert_eq!(config.tun.name, "sazanami-tun".to_string());
+        assert_eq!(config.tun.ip, Ipv4Addr::new(10, 0, 0, 1));
+        assert_eq!(
+            config.tun.cidr,
+            Ipv4Cidr::new(Ipv4Addr::new(10, 0, 0, 0).into(), 16)
+        );
+        assert_eq!(config.dns.upstream.len(), 2);
+        assert_eq!(
+            config.dns.upstream[0],
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), 53)
+        );
+        assert_eq!(
+            config.dns.upstream[1],
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 53)
+        );
+        assert_eq!(config.dns.timeout, Duration::from_secs(2));
+        assert_eq!(
+            config.dns.listen_at,
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 53)
+        );
+        assert_eq!(config.connect_timeout, Duration::from_millis(100));
+        assert_eq!(config.read_timeout, Duration::from_secs(30));
+        assert_eq!(config.write_timeout, Duration::from_secs(30));
+        assert_eq!(config.proxies.len(), 1);
+        assert_eq!(config.proxies[0].name(), "Tokyo Sakura IPLC 01".to_string());
+        assert_eq!(config.proxies[0].protocol(), ServerProtocol::ShadowSocks);
+        assert_eq!(
+            config.proxies[0].addr(),
+            Address::DomainNameAddress("tokyo01.sakurawind.com".to_string(), 11451),
+        );
+        assert_eq!(config.proxies[0].method().unwrap(), CipherKind::CHACHA20);
+        assert_eq!(
+            config.proxies[0].password().unwrap(),
+            "All-hail-chatgpt".to_string()
+        );
+        assert_eq!(config.proxies[0].support_udp(), true);
+        assert_eq!(config.groups.len(), 0);
+        assert_eq!(config.rules.len(), 0);
+    }
+
+    #[test]
+    fn test_load_config_with_all_field() {
         let mut tmp_file = NamedTempFile::new().expect("Failed to create tempfile");
         let content = r#"
         port: 9000
@@ -222,11 +357,27 @@ mod tests {
             method: chacha20-ietf
             password: All-hail-chatgpt
             udp: true
+          - name: "HK vultr IPLC 01"
+            type: socks5
+            server: 127.0.0.1
+            port: 11451
+            username: oshinoko
+            password: hoshinoai
+        groups:
+          - name: "JP"
+            type: load_balance
+            proxies:
+              - "Tokyo Sakura IPLC 01"
+          - name: "Other"
+            type: select
+            proxies:
+              - "HK vultr IPLC 01"
         # From https://github.com/Loyalsoldier/clash-rules
         rules:
           - DOMAIN,clash.razord.top,DIRECT
           - DOMAIN,yacd.haishan.me,DIRECT
           - DOMAIN-SUFFIX,office365.com,DIRECT
+          - DOMAIN-SUFFIX,oshi-no-ko.online,JP
           - MATCH,PROXY
         "#;
 
@@ -258,7 +409,7 @@ mod tests {
         assert_eq!(config.connect_timeout, Duration::from_secs(2));
         assert_eq!(config.read_timeout, Duration::from_secs(5));
         assert_eq!(config.write_timeout, Duration::from_millis(1000));
-        assert_eq!(config.proxies.len(), 1);
+        assert_eq!(config.proxies.len(), 2);
         assert_eq!(config.proxies[0].name(), "Tokyo Sakura IPLC 01".to_string());
         assert_eq!(config.proxies[0].protocol(), ServerProtocol::ShadowSocks);
         assert_eq!(
@@ -271,6 +422,57 @@ mod tests {
             "All-hail-chatgpt".to_string()
         );
         assert_eq!(config.proxies[0].support_udp(), true);
-        // TODO: test proxy rules
+        assert_eq!(config.rules.len(), 5);
+        assert_eq!(config.groups.len(), 2);
+        assert_eq!(config.groups.has("JP"), true);
+        assert_eq!(config.groups.has("EN"), false);
+    }
+
+    #[test]
+    fn test_load_config_with_undefined_proxy() {
+        let mut tmp_file = NamedTempFile::new().expect("Failed to create tempfile");
+        let content = r#"
+        proxies:
+          - name: "Tokyo Sakura IPLC 01"
+            type: ss
+            server: tokyo01.sakurawind.com
+            port: 11451
+            method: chacha20-ietf
+            password: All-hail-chatgpt
+            udp: true
+        groups:
+          - name: "Other"
+            type: select
+            proxies:
+              - "HK vultr IPLC 01"
+        "#;
+
+        tmp_file.write_all(content.as_bytes()).unwrap();
+
+        let config = Config::load(tmp_file.path());
+
+        assert!(config.is_err());
+    }
+
+    #[test]
+    fn test_load_config_with_undefined_group() {
+        let mut tmp_file = NamedTempFile::new().expect("Failed to create tempfile");
+        let content = r#"
+        proxies:
+          - name: "HK vultr IPLC 01"
+            type: socks5
+            server: 127.0.0.1
+            port: 11451
+            username: oshinoko
+            password: hoshinoai
+        rules:
+          - DOMAIN-SUFFIX,office365.com,HK
+        "#;
+
+        tmp_file.write_all(content.as_bytes()).unwrap();
+
+        let config = Config::load(tmp_file.path());
+
+        assert!(config.is_err());
     }
 }

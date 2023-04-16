@@ -5,6 +5,7 @@ use digest::Digest;
 
 use super::Node;
 
+#[derive(Clone)]
 pub struct HashRing<N: Node, D: Digest> {
     ring: BTreeMap<Vec<u8>, N>,
     replicas: HashMap<String, usize>,
