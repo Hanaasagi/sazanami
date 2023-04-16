@@ -1,0 +1,11 @@
+{
+  "server": "0.0.0.0",
+  "server_port": 9000,
+  "method": "plain",
+  "log": {
+    "level": 10,
+    "format": {
+      "without_time": false
+    }
+  }
+}
