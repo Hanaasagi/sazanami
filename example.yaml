@@ -36,6 +36,11 @@ groups:
     type: select
     proxies:
       - "HK vultr IPLC 01"
+  - name: "Chain Proxy"
+    type: chain
+    proxies:
+      - "HK vultr IPLC 01"
+      - "Tokyo Sakura IPLC 01"
 # From https://github.com/Loyalsoldier/clash-rules
 rules:
   - DOMAIN,clash.razord.top,DIRECT
