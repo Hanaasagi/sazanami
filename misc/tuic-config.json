@@ -1,0 +1,11 @@
+{
+  "users": {
+    "4982c463-9cd9-47b0-84a4-8ee54848a746": "asuka"
+  },
+  "certificate": "/etc/tuic/fullchain.cer",
+  "private_key": "/etc/tuic/private.key",
+  "server": "0.0.0.0:443",
+  "congestion_control": "bbr",
+  "alpn": ["h3"],
+  "log_level": "trace"
+}

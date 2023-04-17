@@ -21,7 +21,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::io::ReadBuf;
 use tokio::net::tcp::OwnedReadHalf;
 use tokio::net::tcp::OwnedWriteHalf;
-use tokio::net::TcpStream as TcpConnection;
+use tokio::net::TcpStream;
 use tracing::trace;
 
 use self::{
@@ -62,7 +62,7 @@ pub struct SSTcpStream {
 impl SSTcpStream {
     /// Create a new CryptoStream with the underlying stream connection
     pub async fn connect(
-        stream: TcpConnection,
+        stream: TcpStream,
         addr: Address,
         method: CipherKind,
         key: Bytes,
