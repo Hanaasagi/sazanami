@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::{error, fmt};
 use std::{fmt::Debug, net::SocketAddr};
@@ -27,6 +28,7 @@ pub enum ServerProtocol {
     #[serde(rename = "ss")]
     ShadowSocks,
     Raw,
+    Tuic,
 }
 
 /// Configuration for a server
@@ -45,6 +47,10 @@ pub struct ServerConfig {
     method: Option<CipherKind>,
     #[serde(default)]
     udp: bool,
+    #[serde(default)]
+    certificates: Vec<String>,
+    #[serde(default)]
+    alpn: Vec<String>,
 }
 
 mod cipher_type {
@@ -95,6 +101,8 @@ impl ServerConfig {
         password: Option<String>,
         method: Option<CipherKind>,
         udp: bool,
+        certificates: Vec<String>,
+        alpn: Vec<String>,
     ) -> Self {
         Self {
             name,
@@ -105,6 +113,8 @@ impl ServerConfig {
             password,
             method,
             udp,
+            certificates,
+            alpn,
         }
     }
 
@@ -153,5 +163,14 @@ impl ServerConfig {
 
     pub fn support_udp(&self) -> bool {
         self.udp
+    }
+
+    pub fn certificates(&self) -> Vec<PathBuf> {
+        self.certificates.iter().map(|p| p.into()).collect()
+    }
+
+    pub fn alpn(&self) -> Vec<String> {
+        // TODO:
+        vec!["h3".to_string()]
     }
 }

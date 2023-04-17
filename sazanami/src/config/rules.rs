@@ -25,6 +25,7 @@ impl Node for Server {
 pub enum GroupType {
     Select,
     LoadBalance,
+    Chain,
 }
 
 #[derive(Clone, Deserialize)]
