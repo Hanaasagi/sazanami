@@ -146,7 +146,7 @@ mod tests {
         // simulate a http request
         stream
             .write_all(
-                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                "GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: curl/8.0.1\r\nAccept: */*\r\n\r\n"
                 .as_bytes(),
             )
             .await?;
@@ -171,7 +171,7 @@ mod tests {
         // simulate a http request
         stream
             .write_all(
-                "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nUser-Agent: curl/8.0.1\r\n\r\nAccept: */*"
+                "GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: curl/8.0.1\r\nAccept: */*\r\n\r\n"
                 .as_bytes(),
             )
             .await?;
