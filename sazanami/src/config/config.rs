@@ -21,6 +21,11 @@ fn default_listen_port() -> u16 {
     9000
 }
 
+/// Default value for api server listening at
+fn default_api_server_port() -> u16 {
+    9060
+}
+
 /// Default value for dns timeout
 fn default_dns_timeout() -> Duration {
     Duration::from_secs(2)
@@ -103,6 +108,9 @@ pub struct Config {
     /// Proxy server lisiten at
     #[serde(default = "default_listen_port")]
     pub port: u16,
+    /// Api server lisiten at
+    #[serde(default = "default_api_server_port")]
+    pub api_port: u16,
     /// Tunnel configuration
     #[serde(default)]
     pub tun: TunConfig,
@@ -336,6 +344,7 @@ mod tests {
         let mut tmp_file = NamedTempFile::new().expect("Failed to create tempfile");
         let content = r#"
         port: 9000
+        api_port: 9060
         tun:
           name: "sazanami-tun"
           ip: 10.0.0.1
@@ -386,6 +395,7 @@ mod tests {
         let config = Config::load(tmp_file.path()).unwrap();
 
         assert_eq!(config.port, 9000);
+        assert_eq!(config.api_port, 9060);
         assert_eq!(config.tun.name, "sazanami-tun".to_string());
         assert_eq!(config.tun.ip, Ipv4Addr::new(10, 0, 0, 1));
         assert_eq!(
