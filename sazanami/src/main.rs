@@ -23,13 +23,16 @@ use tokio::sync::RwLock;
 use tracing::error;
 use tracing_subscriber;
 
+mod api;
 mod config;
 mod fake_dns;
 mod io;
+mod metrics;
 mod proxy;
 mod storage;
 mod tun2proxy;
 mod utils;
+use api::ApiServer;
 use config::Config;
 use fake_dns::FakeDNS;
 use proxy::ProxyServer as LocalProxy;
@@ -100,6 +103,13 @@ async fn create_local_proxy(
     Ok(server)
 }
 
+async fn create_api_server(config: Arc<Config>) -> Result<ApiServer> {
+    let listen_at = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.api_port);
+    let server = ApiServer::new(listen_at).await;
+
+    Ok(server)
+}
+
 async fn serve(config: Arc<Config>) -> Result<()> {
     // setup resolv.conf, add 127.0.0.1 to nameservers
     let resolv_config = ResolvConfig::new(DEFAULT_RESOVLV_CONF_PATH, true);
@@ -133,10 +143,22 @@ async fn serve(config: Arc<Config>) -> Result<()> {
         }
     });
 
+    let api_server = create_api_server(config.clone()).await?;
+    let dns_server_monitor = tokio_metrics::TaskMonitor::new();
+    let proxy_server_monitor = tokio_metrics::TaskMonitor::new();
+
+    // release lock in this block
+    {
+        let mut registry = metrics::get_metrics_registry().lock().await;
+
+        registry.add("dns", dns_server_monitor.clone());
+        registry.add("proxy", proxy_server_monitor.clone());
+    }
+
     tokio::select! {
         res = async {
             info!("dns server is listening at {}", dns_server.listen_at());
-            dns_server.serve().await
+            dns_server_monitor.instrument(dns_server.serve()).await
         }=> {
             if let Err(err) = res {
                 error!(cause = %err, "Failed to start");
@@ -152,8 +174,19 @@ async fn serve(config: Arc<Config>) -> Result<()> {
         }
         res = async {
             info!("local proxy is listening at {}", proxy_server.listen_at());
-            proxy_server.serve().await
-        } => {
+            proxy_server_monitor.instrument(proxy_server.serve()).await
+        }
+        => {
+            if let Err(err) = res {
+                error!(cause = %err, "Failed to start");
+            }
+
+        }
+        res = async {
+            info!("api server is listening at {}", api_server.listen_at());
+            api_server.serve().await
+        }
+        => {
             if let Err(err) = res {
                 error!(cause = %err, "Failed to start");
             }
@@ -172,6 +205,9 @@ async fn main() -> Result<()> {
     // install global collector configured based on RUST_LOG env var.
     tracing_subscriber::fmt::init();
 
+    // install global metrics
+    metrics::setup_metrics_registry();
+
     match std::env::var("RUST_LOG").map(|s| s.to_lowercase()) {
         Ok(s) if s.contains("trace") => {
             warn!("trace-level logs are used for debugging and may leak some personal information");
@@ -184,34 +220,6 @@ async fn main() -> Result<()> {
     let config = Arc::new(config);
 
     info!("{PROG_NAME} version: {PROG_VERSION}, link start");
-
-    // This will include your eBPF object file as raw bytes at compile-time and load it at
-    // runtime. This approach is recommended for most real-world use cases. If you would
-    // like to specify the eBPF program at runtime rather than at compile-time, you can
-    // reach for `Bpf::load_file` instead.
-    #[cfg(debug_assertions)]
-    let mut bpf = Bpf::load(include_bytes_aligned!(
-        "../../target/bpfel-unknown-none/debug/sazanami"
-    ))?;
-    #[cfg(not(debug_assertions))]
-    let mut bpf = Bpf::load(include_bytes_aligned!(
-        "../../target/bpfel-unknown-none/release/sazanami"
-    ))?;
-    if let Err(e) = BpfLogger::init(&mut bpf) {
-        // This can happen if you remove all log statements from your eBPF program.
-        warn!("failed to initialize eBPF logger: {}", e);
-    }
-
-    let program: &mut SockOps = bpf.program_mut("sockops").unwrap().try_into()?;
-    program.load()?;
-
-    let cgroup = std::fs::File::open("/sys/fs/cgroup")?;
-    program.attach(cgroup)?;
-
-    let sock_hash: SockHash<MapRefMut, SockHashKey> = SockHash::try_from(bpf.map_mut("SOCKHASH")?)?;
-    let program: &mut SkMsg = bpf.program_mut("bpf_redir").unwrap().try_into()?;
-    program.load()?;
-    program.attach(&sock_hash)?;
 
     tokio::select! {
         res = serve(config) => {
