@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -8,7 +9,7 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use tokio_metrics::TaskMetrics;
+use tokio_metrics::{RuntimeMetrics, TaskMetrics};
 use tokio_util::compat::TokioAsyncReadCompatExt;
 use tracing_subscriber::registry;
 
@@ -62,7 +63,87 @@ impl From<TaskMetrics> for TaskMetricsDef {
         }
     }
 }
+#[derive(Serialize)]
+struct RuntimeMetricsDef {
+    pub workers_count: usize,
+    pub total_park_count: u64,
+    pub max_park_count: u64,
+    pub min_park_count: u64,
+    pub total_noop_count: u64,
+    pub max_noop_count: u64,
+    pub min_noop_count: u64,
+    pub total_steal_count: u64,
+    pub max_steal_count: u64,
+    pub min_steal_count: u64,
+    pub total_steal_operations: u64,
+    pub max_steal_operations: u64,
+    pub min_steal_operations: u64,
+    pub num_remote_schedules: u64,
+    pub total_local_schedule_count: u64,
+    pub max_local_schedule_count: u64,
+    pub min_local_schedule_count: u64,
+    pub total_overflow_count: u64,
+    pub max_overflow_count: u64,
+    pub min_overflow_count: u64,
+    pub total_polls_count: u64,
+    pub max_polls_count: u64,
+    pub min_polls_count: u64,
+    pub total_busy_duration: Duration,
+    pub max_busy_duration: Duration,
+    pub min_busy_duration: Duration,
+    pub injection_queue_depth: usize,
+    pub total_local_queue_depth: usize,
+    pub max_local_queue_depth: usize,
+    pub min_local_queue_depth: usize,
+    pub elapsed: Duration,
+    pub budget_forced_yield_count: u64,
+    pub io_driver_ready_count: u64,
+}
+impl From<RuntimeMetrics> for RuntimeMetricsDef {
+    fn from(item: RuntimeMetrics) -> Self {
+        Self {
+            workers_count: item.workers_count,
+            total_park_count: item.total_park_count,
+            max_park_count: item.max_park_count,
+            min_park_count: item.min_park_count,
+            total_noop_count: item.total_noop_count,
+            max_noop_count: item.max_noop_count,
+            min_noop_count: item.min_noop_count,
+            total_steal_count: item.total_steal_count,
+            max_steal_count: item.max_steal_count,
+            min_steal_count: item.min_steal_count,
+            total_steal_operations: item.total_steal_operations,
+            max_steal_operations: item.max_steal_operations,
+            min_steal_operations: item.min_steal_operations,
+            num_remote_schedules: item.num_remote_schedules,
+            total_local_schedule_count: item.total_local_schedule_count,
+            max_local_schedule_count: item.max_local_schedule_count,
+            min_local_schedule_count: item.min_local_schedule_count,
+            total_overflow_count: item.total_overflow_count,
+            max_overflow_count: item.max_overflow_count,
+            min_overflow_count: item.min_overflow_count,
+            total_polls_count: item.total_polls_count,
+            max_polls_count: item.max_polls_count,
+            min_polls_count: item.min_polls_count,
+            total_busy_duration: item.total_busy_duration,
+            max_busy_duration: item.max_busy_duration,
+            min_busy_duration: item.min_busy_duration,
+            injection_queue_depth: item.injection_queue_depth,
+            total_local_queue_depth: item.total_local_queue_depth,
+            max_local_queue_depth: item.max_local_queue_depth,
+            min_local_queue_depth: item.min_local_queue_depth,
+            elapsed: item.elapsed,
+            budget_forced_yield_count: item.budget_forced_yield_count,
+            io_driver_ready_count: item.io_driver_ready_count,
+        }
+    }
+}
 
+#[derive(Serialize)]
+pub struct Metrics {
+    runtime: RuntimeMetricsDef,
+    tasks: HashMap<String, TaskMetricsDef>,
+}
 pub struct ApiServer {
     /// Listen address
     listen_at: SocketAddr,
@@ -91,12 +172,28 @@ impl ApiServer {
     }
 }
 
-async fn metrics() -> Result<Json<TaskMetricsDef>, (StatusCode, &'static str)> {
+async fn metrics() -> Result<Json<Metrics>, (StatusCode, &'static str)> {
     let mut registry = metrics::get_metrics_registry().lock().await;
+    let mut tasks = HashMap::new();
 
     if let Some(metrics) = registry.get_metrics("proxy").await {
-        Ok(Json(metrics.into()))
+        tasks.insert("proxy".to_owned(), metrics.into());
     } else {
-        Err((StatusCode::INTERNAL_SERVER_ERROR, "Could not fetch metrics"))
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Could not fetch metrics"));
+    }
+
+    if let Some(metrics) = registry.get_metrics("dns").await {
+        tasks.insert("dns".to_owned(), metrics.into());
+    } else {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Could not fetch metrics"));
+    }
+
+    if let Some(metrics) = registry.get_runtime_metrics().await {
+        return Ok(Json(Metrics {
+            runtime: metrics.into(),
+            tasks,
+        }));
+    } else {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Could not fetch metrics"));
     }
 }
