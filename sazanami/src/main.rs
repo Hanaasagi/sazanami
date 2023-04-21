@@ -6,15 +6,19 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use anyhow::Result;
-use aya::maps::MapRefMut;
-use aya::maps::SockHash;
-use aya::programs::SkMsg;
-use aya::programs::SockOps;
+#[cfg(target_os = "linux")]
+use aya::maps::{MapRefMut, SockHash};
+#[cfg(target_os = "linux")]
+use aya::programs::{SkMsg, SockOps};
+#[cfg(target_os = "linux")]
 use aya::{include_bytes_aligned, Bpf};
+#[cfg(target_os = "linux")]
 use aya_log::BpfLogger;
+#[cfg(target_os = "linux")]
+use sazanami_common::SockHashKey;
+
 use clap::Parser;
 use log::{info, warn};
-use sazanami_common::SockHashKey;
 use sazanami_sys::ResolvConfig;
 use sazanami_sys::DEFAULT_RESOVLV_CONF_PATH;
 use sazanami_tun::TunDevice;

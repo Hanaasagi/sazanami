@@ -5,13 +5,10 @@ edition = "2021"
 publish = false
 
 [dependencies]
-aya = { version = ">=0.11", features=["async_tokio"] }
-aya-log = "0.1"
 tuic = { git = "https://github.com/EAimTY/tuic", version = "5.0.0-pre-alpha6" }
 tuic-quinn = { git = "https://github.com/EAimTY/tuic", version = "0.1.0-pre-alpha2" }
 # tuic-protocol = { git = "https://github.com/EAimTY/tuic", version = "4.1.2", branch="0.8.x" }
 clap = { version = "4.2", features = ["derive"] }
-sazanami-common = { path = "../sazanami-common", features = ["user"] }
 sazanami-dns = { path = "../sazanami-dns"}
 sazanami-tun = { path = "../sazanami-tun"}
 sazanami-sys = { path = "../sazanami-sys"}
@@ -70,3 +67,8 @@ path = "src/main.rs"
 
 [dev-dependencies]
 tempfile = "3.5.0"
+
+[target.'cfg(linux)'.dependencies]
+aya = { version = ">=0.11", features=["async_tokio"] }
+aya-log = "0.1"
+sazanami-common = { path = "../sazanami-common", features = ["user"] }
