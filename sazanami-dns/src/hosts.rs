@@ -69,10 +69,7 @@ impl Host {
         Host {
             ip: ip.parse().expect("Invalid ip address"),
             fqdn: fqdn.into(),
-            aliases: match aliases {
-                Some(v) => Some(v.iter().map(|s| s.to_string()).collect()),
-                _ => None,
-            },
+            aliases: aliases.map(|v| v.iter().map(|s| s.to_string()).collect()),
         }
     }
 }
@@ -81,8 +78,8 @@ impl<'a, T: Into<&'a str>> From<T> for Host {
     fn from(s: T) -> Host {
         let values: Vec<&str> = s.into().split_whitespace().collect();
         Host::new(
-            &values.get(0).expect("IP not found"),
-            &values.get(1).expect("FQDN not found"),
+            values.first().expect("IP not found"),
+            values.get(1).expect("FQDN not found"),
             match values.get(2..) {
                 Some([]) => None,
                 Some(aliases) => Some(aliases.to_vec()),
@@ -99,7 +96,7 @@ impl fmt::Display for Host {
 
         if self.aliases.is_some() {
             for alias in self.aliases.as_ref().unwrap() {
-                aliases.push_str(&alias);
+                aliases.push_str(alias);
             }
             return write!(f, "{} {} {}", self.ip, self.fqdn, aliases);
         }
@@ -118,13 +115,13 @@ impl From<&str> for HostsFile {
         let mut hosts: Vec<Host> = vec![];
 
         for line in s.lines() {
-            if line.contains("#") || line.is_empty() {
+            if line.contains('#') || line.is_empty() {
                 continue;
             }
 
             hosts.push(Host::from(line))
         }
-        return HostsFile { hosts };
+        HostsFile { hosts }
     }
 }
 
@@ -164,6 +161,12 @@ impl HostsFile {
     /// Writes hosts to a hosts file.
     pub fn save<P: AsRef<Path>>(self, path: P) {
         fs::write(&path, format!("{}", self)).expect("Invalid path");
+    }
+}
+
+impl Default for HostsFile {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

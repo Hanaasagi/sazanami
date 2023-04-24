@@ -874,7 +874,7 @@ impl AuthenticationResponse {
         let mut buf = [0u8; 2];
         r.read_exact(&mut buf).await?;
 
-        let ver = buf[0];
+        let _ver = buf[0];
         let status = buf[1];
         Ok(AuthenticationResponse { status })
     }

@@ -81,13 +81,13 @@ impl<N: Node, D: Digest> HashRing<N, D> {
         let hashed_key = Self::get_hash(key);
 
         let entry = self.ring.range(hashed_key..).next();
-        if let Some((k, v)) = entry {
+        if let Some((k, _v)) = entry {
             return Some(k.clone());
         }
 
         // Back to the first one
         let first = self.ring.iter().next();
-        let (k, v) = first.unwrap();
+        let (k, _v) = first.unwrap();
         Some(k.clone())
     }
 
@@ -123,6 +123,12 @@ impl<N: Node, D: Digest> HashRing<N, D> {
     /// Is empty
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+}
+
+impl<N: Node, D: Digest> Default for HashRing<N, D> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

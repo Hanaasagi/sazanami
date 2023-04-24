@@ -4,7 +4,6 @@ use std::str::FromStr;
 use anyhow::Result;
 use sazanami_dns::DNSServer;
 use sazanami_dns::Resolver;
-use tokio;
 use trust_dns_proto::rr::Name;
 use trust_dns_proto::rr::RData;
 use trust_dns_proto::rr::Record;
@@ -25,8 +24,7 @@ impl Resolver for FakeDNS {
         let mut answer = Record::with(Name::parse(qname, None).unwrap(), RecordType::A, 2);
         answer.set_data(Some(RData::A(Ipv4Addr::from_str("93.184.216.34").unwrap())));
 
-        let mut answers: Vec<Record> = vec![];
-        answers.push(answer);
+        let answers: Vec<Record> = vec![answer];
 
         answers
     }

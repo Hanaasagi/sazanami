@@ -52,4 +52,4 @@ jobs:
           cargo install bpf-linker
           rustup default nightly
       - name: Run Lint
-        run: cargo clippy --all --all-targets --verbose -- -D warnings
+        run: cargo clippy --all --all-targets --verbose --

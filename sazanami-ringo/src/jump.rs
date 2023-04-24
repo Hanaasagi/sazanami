@@ -1,9 +1,8 @@
-use std::collections::HashMap;
+use std::hash::Hash;
+use std::hash::Hasher;
+#[allow(deprecated)]
 use std::hash::SipHasher13;
-use std::hash::{Hash, Hasher};
-use std::marker;
 
-use digest::Digest;
 use rand::RngCore;
 
 use super::Node;
@@ -75,6 +74,7 @@ impl<N: Node> JumpHasher<N> {
 
     /// Returns a slot for the key `key`, out of `slot_count` available slots.
     fn slot<T: Hash>(&self, key: &T, slot_count: u32) -> u32 {
+        #[allow(deprecated)]
         let mut hs = SipHasher13::new_with_keys(self.k1, self.k2);
         key.hash(&mut hs);
         let mut h = hs.finish();
@@ -89,9 +89,14 @@ impl<N: Node> JumpHasher<N> {
     }
 }
 
+impl<N: Node> Default for JumpHasher<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use md5::Md5;
 
     use super::*;
 
