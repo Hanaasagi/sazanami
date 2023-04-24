@@ -137,8 +137,8 @@ impl Dialer {
         .await??;
 
         // wrap the connection to a stream
-        let stream_inner = match server.protocol() {
-            ServerProtocol::Socks5 => {
+        let stream_inner = match server {
+            ServerConfig::Socks5(server) => {
                 let mut auth = None;
                 if server.username().is_some() && server.password().is_some() {
                     auth = Some((
@@ -150,7 +150,7 @@ impl Dialer {
                     Socks5TcpStream::connect(stream, remote_addr.clone(), auth).await?,
                 )
             }
-            ServerProtocol::ShadowSocks => {
+            ServerConfig::Shadowsocks(server) => {
                 let method = server.method().unwrap_or(CipherKind::NONE);
                 let bytes = match method.category() {
                     CipherCategory::None => method.iv_len(),
@@ -171,7 +171,7 @@ impl Dialer {
                     .await?,
                 )
             }
-            ServerProtocol::Raw => {
+            ServerConfig::Raw(server) => {
                 //
                 ProxyTcpStreamInner::Raw(RawTcpStream::new(stream))
             }

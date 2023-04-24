@@ -46,7 +46,7 @@ use tuic_quinn::{side, Connect, Connection as Model, Task};
 use uuid::Uuid;
 
 use super::utils::*;
-use crate::config::ServerConfig;
+use crate::config::TuicConfig;
 
 static ENDPOINT: OnceCell<Mutex<Endpoint>> = OnceCell::new();
 static CONNECTION: AsyncOnceCell<AsyncMutex<Connection>> = AsyncOnceCell::const_new();
@@ -67,7 +67,7 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
-    pub fn set_config(cfg: ServerConfig) -> Result<(), Error> {
+    pub fn set_config(cfg: TuicConfig) -> Result<(), Error> {
         // TODO:
         let certs = super::utils::load_certs(cfg.certificates(), false)?;
 
