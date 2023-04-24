@@ -324,17 +324,21 @@ mod tests {
         assert_eq!(config.write_timeout, Duration::from_secs(30));
         assert_eq!(config.proxies.len(), 1);
         assert_eq!(config.proxies[0].name(), "Tokyo Sakura IPLC 01".to_string());
-        assert_eq!(config.proxies[0].protocol(), ServerProtocol::ShadowSocks);
+        let proxy = match config.proxies[0].clone() {
+            ServerConfig::Shadowsocks(cfg) => Some(cfg),
+            _ => None,
+        };
+
+        assert!(proxy.is_some());
+        let proxy = proxy.unwrap();
+
         assert_eq!(
-            config.proxies[0].addr(),
+            proxy.addr(),
             Address::DomainNameAddress("tokyo01.sakurawind.com".to_string(), 11451),
         );
-        assert_eq!(config.proxies[0].method().unwrap(), CipherKind::CHACHA20);
-        assert_eq!(
-            config.proxies[0].password().unwrap(),
-            "All-hail-chatgpt".to_string()
-        );
-        assert_eq!(config.proxies[0].support_udp(), true);
+        assert_eq!(proxy.method().unwrap(), CipherKind::CHACHA20);
+        assert_eq!(proxy.password().unwrap(), "All-hail-chatgpt".to_string());
+        assert_eq!(proxy.support_udp(), true);
         assert_eq!(config.groups.len(), 0);
         assert_eq!(config.rules.len(), 0);
     }
@@ -421,17 +425,22 @@ mod tests {
         assert_eq!(config.write_timeout, Duration::from_millis(1000));
         assert_eq!(config.proxies.len(), 2);
         assert_eq!(config.proxies[0].name(), "Tokyo Sakura IPLC 01".to_string());
-        assert_eq!(config.proxies[0].protocol(), ServerProtocol::ShadowSocks);
+
+        let proxy = match config.proxies[0].clone() {
+            ServerConfig::Shadowsocks(cfg) => Some(cfg),
+            _ => None,
+        };
+
+        assert!(proxy.is_some());
+        let proxy = proxy.unwrap();
+
         assert_eq!(
-            config.proxies[0].addr(),
+            proxy.addr(),
             Address::DomainNameAddress("tokyo01.sakurawind.com".to_string(), 11451),
         );
-        assert_eq!(config.proxies[0].method().unwrap(), CipherKind::CHACHA20);
-        assert_eq!(
-            config.proxies[0].password().unwrap(),
-            "All-hail-chatgpt".to_string()
-        );
-        assert_eq!(config.proxies[0].support_udp(), true);
+        assert_eq!(proxy.method().unwrap(), CipherKind::CHACHA20);
+        assert_eq!(proxy.password().unwrap(), "All-hail-chatgpt".to_string());
+        assert_eq!(proxy.support_udp(), true);
         assert_eq!(config.rules.len(), 5);
         assert_eq!(config.groups.len(), 2);
         assert_eq!(config.groups.has("JP"), true);

@@ -79,22 +79,19 @@ mod tests {
     use super::Address;
     use super::Endpoint;
     use super::TuicStream;
-    use crate::config::ServerConfig;
     use crate::config::ServerProtocol;
+    use crate::config::TuicConfig;
 
     #[tokio::test]
     async fn test_tuic() -> Result<()> {
         let mut cert_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         cert_path.push("../misc/tuic-cert.pem");
-        let cfg = ServerConfig::new(
+        let cfg = TuicConfig::new(
             "TUIC Test".to_string(),
             "127.0.0.1".to_string(),
             10100,
-            ServerProtocol::Tuic,
             Some("4982c463-9cd9-47b0-84a4-8ee54848a746".to_string()),
             Some("asuka".to_string()),
-            None,
-            false,
             vec![cert_path.to_str().unwrap().to_owned()],
             vec!["h3".to_string()],
         );
