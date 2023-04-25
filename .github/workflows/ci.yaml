@@ -23,6 +23,7 @@ jobs:
           rustup toolchain install nightly --component rust-src
           cargo install bpf-linker
           rustup default nightly
+      - uses: Swatinem/rust-cache@v2
       - name: Setup Env
         run: docker-compose up -d
       - name: Build
@@ -51,5 +52,6 @@ jobs:
           rustup toolchain install nightly --component rust-src clippy-preview
           cargo install bpf-linker
           rustup default nightly
+      - uses: Swatinem/rust-cache@v2
       - name: Run Lint
         run: cargo clippy --all --all-targets --verbose --
