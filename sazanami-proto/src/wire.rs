@@ -10,7 +10,7 @@ pub fn parse_cidr_v4(s: String) -> Result<Ipv4Cidr> {
     let len = segments[1];
     let addr: Ipv4Addr = addr.parse()?;
     let prefix = len.parse()?;
-    if prefix > 32 || prefix <= 0 {
+    if prefix > 32 || prefix == 0 {
         return Err(anyhow::anyhow!("invalid data"));
     }
     Ok(Ipv4Cidr::new(Ipv4Address::from(addr), prefix))

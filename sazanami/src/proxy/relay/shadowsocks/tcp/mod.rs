@@ -263,7 +263,8 @@ mod tests {
             .await?;
         let mut buf = [0; 1024];
 
-        ss_stream.read(&mut buf[..]).await?;
+        let n = ss_stream.read(&mut buf[..]).await?;
+        assert!(n > 0);
 
         let resp = String::from_utf8_lossy(&buf);
 
@@ -288,7 +289,8 @@ mod tests {
             .await?;
         let mut buf = [0; 1024];
 
-        ss_stream.read(&mut buf[..]).await?;
+        let n = ss_stream.read(&mut buf[..]).await?;
+        assert!(n > 0);
 
         let resp = String::from_utf8_lossy(&buf);
 
@@ -313,7 +315,8 @@ mod tests {
             .await?;
         let mut buf = [0; 1024];
 
-        ss_stream.read(&mut buf[..]).await?;
+        let n = ss_stream.read(&mut buf[..]).await?;
+        assert!(n > 0);
 
         let resp = String::from_utf8_lossy(&buf);
 

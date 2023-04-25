@@ -104,7 +104,7 @@ impl<T: PacketHandler> TunDevice<T> {
 
             match action {
                 PacketAction::PASS => {
-                    self.tun_sock.write(ipv4_packet.as_ref()).unwrap();
+                    self.tun_sock.write_all(ipv4_packet.as_ref()).unwrap();
                 }
 
                 PacketAction::DROP => {}

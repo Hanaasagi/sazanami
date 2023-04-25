@@ -40,6 +40,7 @@ impl IPv4Pool {
         self.pool_range.0
     }
 
+    #[allow(unused)]
     #[inline]
     fn range_end(&self) -> u32 {
         self.pool_range.1
@@ -94,7 +95,7 @@ impl IPv4Pool {
 
             let ip_offset = self.offset.fetch_add(1, Ordering::SeqCst);
             // reset
-            if ip_offset as usize >= self.pool_size {
+            if ip_offset >= self.pool_size {
                 *self.offset.get_mut() = 0;
                 continue;
             }
@@ -128,12 +129,12 @@ mod tests {
             Ipv4Addr::new(192, 168, 0, 125),
         );
 
-        assert_eq!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)), false);
+        assert!(!ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)));
         assert_eq!(
             ip_pool.allocate_ip().unwrap(),
             Ipv4Addr::new(192, 168, 0, 122)
         );
-        assert_eq!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)), true);
+        assert!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)));
 
         assert_eq!(
             ip_pool.allocate_ip().unwrap(),
@@ -198,9 +199,9 @@ mod tests {
         // full
         assert!(ip_pool.allocate_ip().is_err());
         // release
-        assert_eq!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)), true);
+        assert!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)));
         ip_pool.release_ip(Ipv4Addr::new(192, 168, 0, 122));
-        assert_eq!(ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)), false);
+        assert!(!ip_pool.is_allocated(Ipv4Addr::new(192, 168, 0, 122)));
         assert_eq!(ip_pool.allocated_count(), 3);
         assert_eq!(
             ip_pool.allocate_ip().unwrap(),

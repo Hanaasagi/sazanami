@@ -14,6 +14,7 @@ use crate::hosts::{Host, HostsFile};
 /// DNSResolver is a Forwarding DNS resolver
 #[derive(Clone)]
 pub struct DNSResolver {
+    #[allow(dead_code)]
     hosts: HashMap<IpAddr, Host>,
     resolver: AsyncStdResolver,
 }
@@ -44,7 +45,7 @@ impl DNSResolver {
         if !bypass_hosts {
             let hosts_file = HostsFile::load(DEFAULT_HOSTS_PATH);
             for host in hosts_file.hosts.into_iter() {
-                hosts.insert(host.ip.clone(), host);
+                hosts.insert(host.ip, host);
             }
         }
 
@@ -60,7 +61,7 @@ impl DNSResolver {
 
     pub async fn resolve_ip(&self, name: &str) -> Result<Vec<IpAddr>> {
         let response = self.resolver.lookup_ip(name).await?;
-        Ok(response.into_iter().filter_map(|x| Some(x)).collect())
+        Ok(response.into_iter().filter_map(Some).collect())
     }
 }
 
@@ -82,7 +83,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(response.len() > 0);
+        assert!(!response.is_empty());
     }
 
     #[tokio::test]

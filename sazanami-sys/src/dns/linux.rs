@@ -23,14 +23,14 @@ impl<'a> ResolvConfig<'a> {
         // just panic if meet a fatal error
         let data = fs::read(&file_path).expect("Failed to open resovle config file for read");
 
-        return ResolvConfig {
+        ResolvConfig {
             config_path: Box::new(file_path),
             original_content: data,
             restore_when_drop,
-        };
+        }
     }
 
-    fn gen_config(dns: &Vec<String>) -> Vec<u8> {
+    fn gen_config(dns: &[String]) -> Vec<u8> {
         let mut data = vec![];
         for item in dns.iter() {
             if !item.is_empty() {
@@ -41,7 +41,7 @@ impl<'a> ResolvConfig<'a> {
     }
 
     /// Update resolv.conf
-    pub fn update(&self, servers: &Vec<String>) -> Result<()> {
+    pub fn update(&self, servers: &[String]) -> Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -50,7 +50,7 @@ impl<'a> ResolvConfig<'a> {
         // file.set_len(0)?;
         // file.rewind()?;
 
-        let buf = Self::gen_config(&servers);
+        let buf = Self::gen_config(servers);
         file.write_all(&buf)?;
 
         Ok(())
@@ -109,7 +109,7 @@ mod tests {
 
         let config = ResolvConfig::new(&fake_file, true);
         config
-            .update(&vec!["8.8.8.8".to_string(), "1.1.1.1".to_string()])
+            .update(&["8.8.8.8".to_string(), "1.1.1.1".to_string()])
             .unwrap();
 
         let new_content = fs::read(&fake_file).unwrap();

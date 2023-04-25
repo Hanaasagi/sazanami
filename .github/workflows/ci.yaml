@@ -40,3 +40,16 @@ jobs:
         with:
           verbose: true
           fail_ci_if_error: true
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Rust
+        run: |
+          rustup install stable
+          rustup toolchain install nightly --component rust-src clippy-preview
+          cargo install bpf-linker
+          rustup default nightly
+      - name: Run Lint
+        run: cargo clippy --all --all-targets --verbose --

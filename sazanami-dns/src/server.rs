@@ -31,16 +31,14 @@ impl<T: Resolver> InnerDNSServer<T> {
     async fn constuct_response_answers(&self, request: &Request) -> Vec<Record> {
         let qname = request.query().name();
         let qtype = request.query().query_type();
-        let answers = self
-            .resolve_handler
-            .resolve(qname.to_string().as_str(), qtype, false)
-            .await;
 
-        answers
+        self.resolve_handler
+            .resolve(qname.to_string().as_str(), qtype, false)
+            .await
     }
 
     async fn constuct_response_header(&self, request: &Request) -> Header {
-        let mut header = request.header().clone();
+        let mut header = *request.header();
         // change message type from query to response
         header.set_message_type(MessageType::Response);
         // DNS Flags:

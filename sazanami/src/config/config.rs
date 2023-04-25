@@ -440,11 +440,11 @@ mod tests {
         );
         assert_eq!(proxy.method().unwrap(), CipherKind::CHACHA20);
         assert_eq!(proxy.password().unwrap(), "All-hail-chatgpt".to_string());
-        assert_eq!(proxy.support_udp(), true);
+        assert!(proxy.support_udp());
         assert_eq!(config.rules.len(), 5);
         assert_eq!(config.groups.len(), 2);
-        assert_eq!(config.groups.has("JP"), true);
-        assert_eq!(config.groups.has("EN"), false);
+        assert!(config.groups.has("JP"));
+        assert!(!config.groups.has("EN"));
     }
 
     #[test]
