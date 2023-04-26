@@ -1,0 +1,33 @@
+{
+  "log": {
+    // By default, V2Ray writes access log to stdout.
+    // "access": "/path/to/access/log/file",
+
+    // By default, V2Ray write error log to stdout.
+    // "error": "/path/to/error/log/file",
+
+    // Log level, one of "debug", "info", "warning", "error", "none"
+    "loglevel": "debug"
+  },
+  "inbounds": [
+    {
+      "port": 9000,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "a91d1557-c4c3-4c08-a177-2b8b774fd7f3",
+            "level": 1,
+            "alterId": 64
+          }
+        ]
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {}
+    }
+  ]
+}

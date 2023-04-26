@@ -57,3 +57,11 @@ services:
       - ./misc/tuic-config.json:/etc/tuic/config.json:ro
       - ./misc/tuic-cert.pem:/etc/tuic/fullchain.cer:ro
       - ./misc/tuic-key.pem:/etc/tuic/private.key:ro
+  vmess-server:
+    image: teddysun/v2ray
+    container_name: vmess-server
+    ports:
+      - "10110:9000"
+      - "10110:9000/udp"
+    volumes:
+      - ./misc/vmess-config.json:/etc/v2ray/config.json:ro
