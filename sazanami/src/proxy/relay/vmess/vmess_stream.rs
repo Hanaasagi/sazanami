@@ -199,19 +199,17 @@ impl<T: AsyncRead + Unpin> VmessStream<T> {
         dst: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
         // wait resp
-        while !(*self.header_reader).received_resp() {
-            let res = (*self.header_reader).poll_read_decrypted(ctx, &mut self.stream);
-            if res.is_error() {
-                return Poll::Pending;
-            } else if res.is_ready() {
-                break;
-            }
+        (*self.header_reader).received_resp();
+        let res = (*self.header_reader).poll_read_decrypted(ctx, &mut self.stream);
+        if res.is_error() {
             return Poll::Pending;
+        } else if res.is_ready() {
+            // steal buffer
+            self.reader.buffer = self.header_reader.get_buffer();
+            // streaming
+            return self.reader.poll_read_decrypted(ctx, &mut self.stream, dst);
         }
-        // steal buffer
-        self.reader.buffer = self.header_reader.get_buffer();
-        // streaming
-        self.reader.poll_read_decrypted(ctx, &mut self.stream, dst)
+        return Poll::Pending;
     }
 }
 

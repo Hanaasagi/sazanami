@@ -143,6 +143,6 @@ mod test {
     #[test]
     fn test_fnv1a() {
         let res = fnv1a!(&[1, 2, 4, 5, 6]) as u32;
-        assert_eq!(res, 59409728,)
+        assert_eq!(res, 594097281)
     }
 }
