@@ -21,7 +21,7 @@ impl<'a> ResolvConfig<'a> {
     /// Create a new ResolvConfig
     pub fn new<P: AsRef<Path> + 'a>(file_path: P, restore_when_drop: bool) -> Self {
         // just panic if meet a fatal error
-        let data = fs::read(&file_path).expect("Failed to open resovle config file for read");
+        let data = fs::read(&file_path).expect("Failed to open resolve config file for read");
 
         ResolvConfig {
             config_path: Box::new(file_path),
@@ -62,10 +62,10 @@ impl<'a> ResolvConfig<'a> {
             .write(true)
             .truncate(true)
             .open(self.config_path.as_ref())
-            .expect("Failed to open resovle config file {} for write");
+            .expect("Failed to open resolve config file {} for write");
 
         file.write_all(&self.original_content)
-            .expect("Failed to write resovle config file");
+            .expect("Failed to write resolve config file");
     }
 }
 

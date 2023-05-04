@@ -1,18 +1,13 @@
-use std::net::IpAddr;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use sazanami_dns::DNSResolver;
 use sazanami_proto::socks5::Address;
-use tokio::net::TcpListener;
-use tokio::net::TcpStream;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
-use tracing::error;
-use tracing::info;
-use tracing::trace_span;
-use tracing::Instrument;
+use tracing::{error, info, trace_span, Instrument};
 
 use super::dia_relay::Dialer;
 use super::relay::raw::RawTcpStream;
@@ -80,7 +75,7 @@ impl ProxyServer {
         let peer_addr = conn.peer_addr()?;
         let peer_port = peer_addr.port();
 
-        // User searchs domain
+        // User searches domain
         // In DNS, we generate a fake ip for domain
         // User connects the fake ip which is a tunnel ip
         // In tunnel, we forward the ip packet to this proxy

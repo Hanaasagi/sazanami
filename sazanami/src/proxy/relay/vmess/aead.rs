@@ -1,7 +1,6 @@
 use std::io::ErrorKind;
 use std::pin::Pin;
-use std::task::ready;
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 use std::{cmp, io, slice};
 
 use aes_gcm::Aes128Gcm;
@@ -9,9 +8,7 @@ use bytes::{Buf, BufMut, BytesMut};
 use chacha20poly1305::ChaCha20Poly1305;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
-use super::AeadCipherHelper;
-use super::CipherKind;
-use super::LW_BUFFER_SIZE;
+use super::{AeadCipherHelper, CipherKind, LW_BUFFER_SIZE};
 use crate::impl_read_utils;
 use crate::io::ext::PollUtil;
 use crate::proxy::vmess::vmess_stream::{CHUNK_SIZE, MAX_SIZE};
@@ -178,7 +175,7 @@ impl EncryptedWriter {
         println!("buffer is {:?}", self.buffer);
         self.buffer.clear();
         println!(
-            "vmess: write data done,last writen len:{}",
+            "vmess: write data done,last written len:{}",
             res.get_poll_res()
         );
         let size = res.get_poll_res();
