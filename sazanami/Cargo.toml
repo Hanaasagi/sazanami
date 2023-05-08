@@ -50,7 +50,7 @@ tokio-retry = "0.3.0"
 
 # tuic
 quinn = { version = "0.9.3", default-features = false, features = ["futures-io", "runtime-tokio", "tls-rustls"] }
-rustls = { version = "0.20.8", default-features = false, features = ["quic"] }
+rustls = { version = "0.21.1", default-features = false, features = ["quic"] }
 rustls-native-certs = { version = "0.6.2", default-features = false }
 rustls-pemfile = { version = "1.0.2", default-features = false }
 crossbeam-utils = { version = "0.8.15", default-features = false, features = ["std"] }
