@@ -2811,7 +2811,7 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 [[package]]
 name = "tuic"
 version = "5.0.0-pre-alpha7"
-source = "git+https://github.com/EAimTY/tuic#c1f6a2ca337bbe3809a9102d2b5fb2e717d6c959"
+source = "git+https://github.com/EAimTY/tuic#c776c53d33200be623948e2f00856622eeab7b82"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2824,7 +2824,7 @@ dependencies = [
 [[package]]
 name = "tuic-quinn"
 version = "0.1.0-pre-alpha3"
-source = "git+https://github.com/EAimTY/tuic#c1f6a2ca337bbe3809a9102d2b5fb2e717d6c959"
+source = "git+https://github.com/EAimTY/tuic#c776c53d33200be623948e2f00856622eeab7b82"
 dependencies = [
  "bytes",
  "futures-util",
