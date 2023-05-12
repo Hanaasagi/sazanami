@@ -26,10 +26,12 @@ use bytes::Bytes;
 use crossbeam_utils::atomic::AtomicCell;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
+use quinn::Connection as QuinnConnection;
+use quinn::SendStream;
 use quinn::{
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},
-    ClientConfig, Connection as QuinnConnection, Endpoint as QuinnEndpoint, EndpointConfig,
-    RecvStream, SendStream, TokioRuntime, TransportConfig, VarInt,
+    ClientConfig, Endpoint as QuinnEndpoint, EndpointConfig, RecvStream, TokioRuntime,
+    TransportConfig, VarInt,
 };
 use register_count::{Counter, Register};
 use rustls::{version, ClientConfig as RustlsClientConfig};
@@ -112,7 +114,12 @@ impl Endpoint {
         config.transport_config(Arc::new(tp_cfg));
 
         let socket = UdpSocket::bind(SocketAddr::from(([0, 0, 0, 0], 0)))?;
-        let mut ep = QuinnEndpoint::new(EndpointConfig::default(), None, socket, TokioRuntime)?;
+        let mut ep = QuinnEndpoint::new(
+            EndpointConfig::default(),
+            None,
+            socket,
+            Arc::new(TokioRuntime),
+        )?;
         ep.set_default_client_config(config);
 
         let uuid = uuid::Uuid::from_str(cfg.username().unwrap_or(""))?;
