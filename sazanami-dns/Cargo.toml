@@ -20,7 +20,7 @@ tracing = "0.1.37"
 trust-dns = "0.22.0"
 trust-dns-proto = "0.22.0"
 trust-dns-resolver = "0.22.0"
-trust-dns-server = "0.22.0"
+trust-dns-server = "0.22.1"
 
 [dev-dependencies]
 tempfile = "3.5.0"
