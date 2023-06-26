@@ -2829,8 +2829,8 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 
 [[package]]
 name = "tuic"
-version = "5.0.0-pre-alpha7"
-source = "git+https://github.com/EAimTY/tuic#e264448ff0d8e3bf531a849271ebf0100d30011e"
+version = "5.0.0"
+source = "git+https://github.com/EAimTY/tuic#0a0fa8b2c89d32cf88035f90489efd9f06a6bf76"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2842,8 +2842,8 @@ dependencies = [
 
 [[package]]
 name = "tuic-quinn"
-version = "0.1.0-pre-alpha3"
-source = "git+https://github.com/EAimTY/tuic#e264448ff0d8e3bf531a849271ebf0100d30011e"
+version = "0.1.0"
+source = "git+https://github.com/EAimTY/tuic#0a0fa8b2c89d32cf88035f90489efd9f06a6bf76"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2922,9 +2922,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "uuid"
-version = "1.3.2"
+version = "1.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dad5567ad0cf5b760e5665964bec1b47dfd077ba8a2544b513f3556d3d239a2"
+checksum = "0fa2982af2eec27de306107c027578ff7f423d65f7250e40ce0fea8f45248b81"
 dependencies = [
  "serde",
 ]
