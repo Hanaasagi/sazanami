@@ -10,7 +10,7 @@ aya-log = "0.1"
 tuic = { git = "https://github.com/EAimTY/tuic", version = "5.0.0-pre-alpha7" }
 tuic-quinn = { git = "https://github.com/EAimTY/tuic", version = "0.1.0-pre-alpha3" }
 # tuic-protocol = { git = "https://github.com/EAimTY/tuic", version = "4.1.2", branch="0.8.x" }
-clap = { version = "4.2", features = ["derive"] }
+clap = { version = "4.3", features = ["derive"] }
 sazanami-common = { path = "../sazanami-common", features = ["user"] }
 sazanami-dns = { path = "../sazanami-dns"}
 sazanami-tun = { path = "../sazanami-tun"}
