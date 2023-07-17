@@ -55,7 +55,7 @@ rustls-native-certs = { version = "0.6.2", default-features = false }
 rustls-pemfile = { version = "1.0.2", default-features = false }
 crossbeam-utils = { version = "0.8.15", default-features = false, features = ["std"] }
 register-count = { version = "0.1.0", default-features = false, features = ["std"] }
-uuid = { version = "1.3.2", default-features = false, features = ["serde", "std"] }
+uuid = { version = "1.4.1", default-features = false, features = ["serde", "std"] }
 tokio-util = { version = "0.7.8", default-features = false, features = ["compat"] }
 axum = "0.6.18"
 once_cell = "1.17.1"
