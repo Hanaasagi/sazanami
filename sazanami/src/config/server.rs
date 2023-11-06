@@ -340,13 +340,6 @@ impl ServerConfig {
             _ => unreachable!(""),
         }
     }
-
-    pub fn as_tuic_config(self) -> TuicConfig {
-        match self {
-            Self::Tuic(cfg) => cfg,
-            _ => unreachable!(""),
-        }
-    }
 }
 
 pub mod server_config {

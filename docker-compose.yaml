@@ -46,17 +46,6 @@ services:
       - "10092:9000/udp"
     volumes:
       - "./misc/ss-plain.json:/etc/shadowsocks-rust/config.json"
-  tuic-server:
-    image: hanaasagi/tuic-server:3c7cd6
-    container_name: tuic-server
-    restart: always
-    ports:
-      - "10100:443"
-      - "10100:443/udp"
-    volumes:
-      - ./misc/tuic-config.json:/etc/tuic/config.json:ro
-      - ./misc/tuic-cert.pem:/etc/tuic/fullchain.cer:ro
-      - ./misc/tuic-key.pem:/etc/tuic/private.key:ro
   vmess-server:
     image: teddysun/v2ray
     container_name: vmess-server
