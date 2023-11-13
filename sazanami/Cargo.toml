@@ -30,7 +30,7 @@ smoltcp = "0.9.1"
 bytes = "1.4.0"
 trust-dns-proto = "0.22.0"
 trust-dns-resolver = "0.22.0"
-trust-dns-server = "0.22.0"
+trust-dns-server = "0.22.1"
 async-trait = "0.1.68"
 tokio-metrics = { version = "0.2.2", features = ["rt"] }
 tokio-stream = { version = "0.1.14", features = ["net"] }
