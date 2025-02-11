@@ -4,6 +4,8 @@
 [![codecov](https://codecov.io/gh/Hanaasagi/sazanami/branch/master/graph/badge.svg?token=5HYU2QTKZW)](https://codecov.io/gh/Hanaasagi/sazanami)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/fe79332f3c95478c9ff8190a0893d262)](https://app.codacy.com/gh/Hanaasagi/sazanami/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
+**WARNING: This project has not been maintained since November 2023.**
+
 Universal Proxy Client.
 
 ## Working mode
@@ -81,6 +83,16 @@ RUST_LOG=none,sazanami=info cargo xtask run -- --config example.yaml
 <!-- ![out-5](https://user-images.githubusercontent.com/9482395/231234649-af857d62-5f99-4f01-8c25-cc0af3f4b9ac.png) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami?ref=badge_shield)
 !-->
 
-
 ## License
+
+sazanami itself is GNU General Public License v3.0. And Some code referenced from the following projects in the project.
+
+- [EAimTY/tuic](https://github.com/EAimTY/tuic) GNU General Public License v3.0
+- [shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) MIT License
+- [shoes](https://github.com/cfal/shoes) MIT License
+- [v2ray-rust](https://github.com/Qv2ray/v2ray-rust) GNU Affero General Public License v3.0
+- [aya-rs](https://github.com/aya-rs/aya) MIT License / Apache-2.0 License
+
+Licenses cound be found in licenses directory.
+
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FHanaasagi%2Fsazanami?ref=badge_large)
